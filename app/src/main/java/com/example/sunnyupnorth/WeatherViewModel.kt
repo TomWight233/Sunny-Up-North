@@ -26,7 +26,7 @@ class WeatherViewModel : ViewModel() {
         private set
 
     suspend fun fetchWeather(city: String) {
-        weather = api.getWeather(city, "API_KEY")
+        weather = api.getWeather(city, "24e6ac99e599996103979747b1734d33")
     }
 
 

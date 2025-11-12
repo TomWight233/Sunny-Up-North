@@ -28,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -56,36 +57,34 @@ fun App() {
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
             HomeScreen(
-                onStartWeather = {
-                    navController.navigate("weather") }
+                viewModel = viewModel,
+                onStartWeather = { city: String ->
+                    viewModel.onSearchChange(city)
+                    navController.navigate ("weather")
+                } as () -> Unit
             )
         }
 
-//// --- WEATHER SCREEN ---
-//        composable("weather") {
-//            WeatherScreen(
-//                viewModel = viewModel,
-//                onNext = {
-//                    val hasNext = viewModel.nextQuestion()
-//                    if (!hasNext) {
-//                        navController.navigate("results")
-//                    }
-//                }
-//            )
-//        }
+// --- WEATHER SCREEN ---
+        composable("weather") {
+            WeatherScreen(
+                viewModel = viewModel
+            )
 
 
-
+        }
     }
 }
+
 
 val lightSkyBlue = Color(0xFF81D4FA) // A light, clear sky blue
 val deepSkyBlue = Color(0xFF0288D1)  // A deeper, vibrant blue
 
 @Composable
 fun HomeScreen(
-    onStartWeather: () -> Unit) {
-    val viewModel = WeatherViewModel()
+    viewModel: WeatherViewModel,
+    onStartWeather: () -> Unit
+) {
     val skyGradient = Brush.verticalGradient(
         colors = listOf(lightSkyBlue, deepSkyBlue)
     )
@@ -103,7 +102,7 @@ fun HomeScreen(
             modifier = Modifier.size(360.dp)
 
         )
-        OutlinedTextField(
+        TextField(
             value = viewModel.searchLocation,
             onValueChange = { viewModel.onSearchChange(it) },
             label = { Text("Search Location") },
@@ -121,7 +120,6 @@ fun HomeScreen(
         )
     }
 }
-
 
 
 interface WeatherApi {
@@ -147,6 +145,13 @@ data class WeatherDescription(val description: String, val icon: String)
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel = viewModel()) {
     val weather = viewModel.weather
+    val city = viewModel.searchLocation
+
+    LaunchedEffect(city) {
+        if(city.isNotBlank()) {
+            viewModel.fetchWeather(city)
+        }
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -168,6 +173,6 @@ fun WeatherScreen(viewModel: WeatherViewModel = viewModel()) {
 @Composable
 fun WeatherPreview() {
     SunnyUpNorthTheme {
-        HomeScreen(onStartWeather = {})
+        HomeScreen(viewModel = viewModel(), onStartWeather = {})
     }
 }
