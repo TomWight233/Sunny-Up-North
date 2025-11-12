@@ -5,33 +5,42 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.*
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.ViewModel
-import com.example.sunnyupnorth.ui.theme.SunnyUpNorthTheme
-import retrofit2.http.GET
-import retrofit2.http.Query
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.sunnyupnorth.ui.theme.SunnyUpNorthTheme
+import retrofit2.http.GET
+import retrofit2.http.Query
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,14 +48,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SunnyUpNorthTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    App()
+                App()
 
-                }
             }
         }
     }
 }
+
 
 @Composable
 fun App() {
@@ -58,17 +66,20 @@ fun App() {
         composable("home") {
             HomeScreen(
                 viewModel = viewModel,
-                onStartWeather = { city: String ->
+                onStartWeather = { city ->
                     viewModel.onSearchChange(city)
-                    navController.navigate ("weather")
-                } as () -> Unit
+                    navController.navigate("weather")
+                }
             )
         }
 
 // --- WEATHER SCREEN ---
         composable("weather") {
             WeatherScreen(
-                viewModel = viewModel
+                viewModel = viewModel,
+                onRestart = {
+                    navController.navigate("home")
+                }
             )
 
 
@@ -83,7 +94,7 @@ val deepSkyBlue = Color(0xFF0288D1)  // A deeper, vibrant blue
 @Composable
 fun HomeScreen(
     viewModel: WeatherViewModel,
-    onStartWeather: () -> Unit
+    onStartWeather: (String) -> Unit
 ) {
     val skyGradient = Brush.verticalGradient(
         colors = listOf(lightSkyBlue, deepSkyBlue)
@@ -110,7 +121,7 @@ fun HomeScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = {
-                IconButton(onClick = onStartWeather) { // <-- The change is here
+                IconButton(onClick = { onStartWeather(viewModel.searchLocation) }) { // <-- The change is here
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = "Search"
@@ -143,13 +154,12 @@ data class WeatherDescription(val description: String, val icon: String)
 
 
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel = viewModel()) {
+fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
     val weather = viewModel.weather
-    val city = viewModel.searchLocation
 
-    LaunchedEffect(city) {
-        if(city.isNotBlank()) {
-            viewModel.fetchWeather(city)
+    LaunchedEffect(Unit) {
+        if (viewModel.searchLocation.isNotBlank()) {
+            viewModel.fetchWeather(viewModel.searchLocation)
         }
     }
 
@@ -159,20 +169,25 @@ fun WeatherScreen(viewModel: WeatherViewModel = viewModel()) {
         modifier = Modifier.fillMaxSize()
     ) {
         if (weather != null) {
-            Text("City: ${weather.name}")
+            Text("${weather.name}", style = MaterialTheme.typography.headlineLarge)
+            Spacer(Modifier.height(24.dp))
             Text("Temp: ${weather.main.temp}°C")
             Text("Condition: ${weather.weather[0].description}")
         } else {
             Text("Enter a city to get the weather.")
         }
+        Button(onClick = onRestart) {
+            Text("Return home")
+        }
     }
 }
 
 
+@SuppressLint("ViewModelConstructorInComposable")
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun WeatherPreview() {
     SunnyUpNorthTheme {
-        HomeScreen(viewModel = viewModel(), onStartWeather = {})
+        WeatherScreen(viewModel = FakeWeatherViewModel(), onRestart = {})
     }
 }
