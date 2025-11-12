@@ -31,9 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -149,13 +152,16 @@ data class WeatherResponse(
     val weather: List<WeatherDescription>
 )
 
-data class MainInfo(val temp: Double, val humidity: Int)
-data class WeatherDescription(val description: String, val icon: String)
+data class MainInfo(val temp: Double, val humidity: Int, val feels_like: Double)
+data class WeatherDescription(val main: String, val description: String, val icon: String)
 
 
 @Composable
 fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
     val weather = viewModel.weather
+    val skyGradient = Brush.verticalGradient(
+        colors = listOf(lightSkyBlue, deepSkyBlue)
+    )
 
     LaunchedEffect(Unit) {
         if (viewModel.searchLocation.isNotBlank()) {
@@ -165,13 +171,44 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()
+        verticalArrangement = Arrangement.Top,
+        modifier = Modifier.fillMaxSize().background(brush = skyGradient).padding(top = 50.dp)
+
     ) {
         if (weather != null) {
-            Text("${weather.name}", style = MaterialTheme.typography.headlineLarge)
-            Spacer(Modifier.height(24.dp))
-            Text("Temp: ${weather.main.temp}°C")
+            Text("${weather.name}", style = MaterialTheme.typography.headlineLarge.copy(
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Bold
+            ))
+            when (weather.weather[0].main.lowercase()){
+            "clouds" -> Image(
+                painter = painterResource(id = R.drawable.cloud),
+                contentDescription = "Clouds Icon",
+                modifier = Modifier.size(180.dp)
+            )
+                "clear" -> Image(
+                    painter = painterResource(id = R.drawable.clear),
+                    contentDescription = "Sunny Clear Icon",
+                    modifier = Modifier.size(180.dp)
+
+                )
+                "rain" -> Image(
+                    painter = painterResource(id = R.drawable.rain),
+                    contentDescription = "Rain Icon",
+                    modifier = Modifier.size(180.dp)
+
+                )
+                else -> Image(
+                    painter = painterResource(id = R.drawable.unknown),
+                    contentDescription = "Unknown image",
+                    modifier = Modifier.size(180.dp)
+
+                )
+
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("${weather.main.temp}°C" , fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center)
+            Text("Feels Like: ${weather.main.feels_like}°C", fontWeight = FontWeight.Bold)
             Text("Condition: ${weather.weather[0].description}")
         } else {
             Text("Enter a city to get the weather.")
