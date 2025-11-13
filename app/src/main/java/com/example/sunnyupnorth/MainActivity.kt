@@ -21,12 +21,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,8 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,6 +93,7 @@ fun App() {
             HomeScreen(
                 viewModel = viewModel,
                 onStartWeather = { city ->
+                    viewModel.onSearchChange(city)
                     viewModel.fetchWeather(city) { success ->
                         if (success) {
                             navController.navigate("weather")
@@ -144,7 +149,7 @@ fun HomeScreen(
         Image(
             painter = painterResource(id = R.drawable.iasun),
             contentDescription = "Sunny Up North Logo",
-            modifier = Modifier.size(360.dp)
+            modifier = Modifier.size(340.dp)
 
         )
         TextField(
@@ -165,11 +170,14 @@ fun HomeScreen(
         )
 
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
         viewModel.savedLocations.forEach {
             if (it != "") {
-                Button(onClick = { onStartWeather(it) }) {
-                    Text(it)
+                Button(onClick = { onStartWeather(it) }, modifier= Modifier.fillMaxWidth(0.80f), shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F5185), contentColor = Color.White)) {
+                    Text(it,
+                        fontSize = 20.sp,
+                        color = Color.White)
+
                 }
             }
         }
@@ -256,7 +264,8 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = "Save",
-                        tint = heartColour
+                        tint = heartColour,
+                        modifier = Modifier.size(60.dp)
                     )
                 }
 
@@ -393,22 +402,23 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
         Text("Enter a city to get the weather.")
     }
     Spacer(Modifier.height(50.dp))
-    Button(onClick = onRestart) {
+    Button(onClick = onRestart) { println(viewModel.savedLocations)
         Text("Return home")
+
     }
 
 
 }
 }
 
-//@SuppressLint("ViewModelConstructorInComposable")
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun HomePreview() {
-//    SunnyUpNorthTheme {
-//        HomeScreen(viewModel = FakeHomeScreenViewModel(), onStartWeather = {})
-//    }
-//}
+@SuppressLint("ViewModelConstructorInComposable")
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun HomePreview() {
+    SunnyUpNorthTheme {
+        HomeScreen(viewModel = FakeHomeScreenViewModel(), onStartWeather = {})
+    }
+}
 
 
 @SuppressLint("ViewModelConstructorInComposable")
