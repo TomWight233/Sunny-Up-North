@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -28,8 +30,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -152,7 +156,7 @@ data class WeatherResponse(
     val weather: List<WeatherDescription>
 )
 
-data class MainInfo(val temp: Double, val humidity: Int, val feels_like: Double)
+data class MainInfo(val temp: Double, val humidity: Int, val feelsLike: Double)
 data class WeatherDescription(val main: String, val description: String, val icon: String)
 
 
@@ -178,37 +182,50 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
         if (weather != null) {
             Text("${weather.name}", style = MaterialTheme.typography.headlineLarge.copy(
                 fontSize = 64.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+
             ))
+
+            val imageModifier = Modifier
+                .size(180.dp)
+                .clip(CircleShape) // Clip the image (and background/border) to a circle
+                .background(Color.White) // Add the white background
+                .border(2.dp, Color.Black, CircleShape) // Add a 2dp black border
+
             when (weather.weather[0].main.lowercase()){
             "clouds" -> Image(
                 painter = painterResource(id = R.drawable.cloud),
                 contentDescription = "Clouds Icon",
-                modifier = Modifier.size(180.dp)
+                modifier = imageModifier,
+                contentScale = ContentScale.Crop
             )
                 "clear" -> Image(
                     painter = painterResource(id = R.drawable.clear),
                     contentDescription = "Sunny Clear Icon",
-                    modifier = Modifier.size(180.dp)
+                    modifier = imageModifier,
+                    contentScale = ContentScale.Crop
 
                 )
                 "rain" -> Image(
                     painter = painterResource(id = R.drawable.rain),
                     contentDescription = "Rain Icon",
-                    modifier = Modifier.size(180.dp)
+                    modifier = imageModifier,
+                    contentScale = ContentScale.Crop
 
                 )
                 else -> Image(
                     painter = painterResource(id = R.drawable.unknown),
                     contentDescription = "Unknown image",
-                    modifier = Modifier.size(180.dp)
+                    modifier = imageModifier,
+                    contentScale = ContentScale.Crop
 
                 )
 
             }
             Spacer(Modifier.height(16.dp))
-            Text("${weather.main.temp}°C" , fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center)
-            Text("Feels Like: ${weather.main.feels_like}°C", fontWeight = FontWeight.Bold)
+            Text("${weather.main.temp.toInt()}°C" , fontWeight = FontWeight.Bold, fontSize = 20.sp, textAlign = TextAlign.Center)
+            Text("Feels Like: ${weather.main.feelsLike.toInt()}°C", fontWeight = FontWeight.Bold)
             Text("Condition: ${weather.weather[0].description}")
         } else {
             Text("Enter a city to get the weather.")
