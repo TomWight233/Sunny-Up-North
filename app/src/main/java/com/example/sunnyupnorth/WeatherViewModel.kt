@@ -14,7 +14,6 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 
-
 open class WeatherViewModel : ViewModel() {
 
     private val moshi = Moshi.Builder()
@@ -37,7 +36,28 @@ open class WeatherViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
+    var saveMessage by mutableStateOf<String?>(null)
+        private set
+
     public var savedLocations = MutableList(10) { "" }
+
+    var counter = 0
+
+    fun saveLocation(city: String) {
+        if (city !in savedLocations) {
+            savedLocations[counter] = city
+            saveMessage = "Location saved!"
+            counter += 1
+        }
+        else {
+            saveMessage = "Already saved."
+        }
+
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(4000)
+            saveMessage = null
+        }
+    }
 
 
     fun fetchWeather(city: String, onResult: (Boolean) -> Unit) {
