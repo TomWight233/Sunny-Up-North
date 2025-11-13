@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -52,6 +53,8 @@ import com.squareup.moshi.Json
 import retrofit2.http.GET
 import retrofit2.http.Query
 import java.text.SimpleDateFormat
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.TextButton
 import java.util.*
 
 class MainActivity : ComponentActivity() {
@@ -79,11 +82,15 @@ fun App() {
             HomeScreen(
                 viewModel = viewModel,
                 onStartWeather = { city ->
-                    viewModel.onSearchChange(city)
-                    navController.navigate("weather")
+                    viewModel.fetchWeather(city) { success ->
+                        if (success) {
+                            navController.navigate("weather")
+                        }
+                    }
                 }
             )
         }
+
 
 // --- WEATHER SCREEN ---
         composable("weather") {
@@ -104,7 +111,7 @@ val lightSkyBlue = Color(0xFF81D4FA) // A light, clear sky blue
 val deepSkyBlue = Color(0xFF0288D1)  // A deeper, vibrant blue
 
 
-fun formatTime(timestamp: Long, timezoneOffset: Long):String {
+fun formatTime(timestamp: Long, timezoneOffset: Long): String {
     val date = Date((timestamp + timezoneOffset) * 1000)
     val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
     sdf.timeZone = TimeZone.getTimeZone("UTC")
@@ -149,6 +156,28 @@ fun HomeScreen(
                 }
             }
         )
+
+        viewModel.savedLocations[0] = "London"
+        viewModel.savedLocations[1] = "Sheffield"
+
+        Spacer(Modifier.height(16.dp))
+        viewModel.savedLocations.forEach {
+            if (it != "") {
+                Button(onClick = { onStartWeather(it) }) {
+                    Text(it)
+                }
+            }
+        }
+
+        viewModel.errorMessage?.let { error ->
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = error,
+                color = Color.Red,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        }
     }
 }
 
@@ -171,9 +200,12 @@ data class WeatherResponse(
     val timezone: Long
 )
 
-data class MainInfo(val temp: Double, val humidity: Int, @Json(name = "feels_like") val feelsLike: Double,
-                    @Json(name = "temp_min") val tempMin: Double,
-                    @Json(name = "temp_max") val tempMax: Double)
+data class MainInfo(
+    val temp: Double, val humidity: Int, @Json(name = "feels_like") val feelsLike: Double,
+    @Json(name = "temp_min") val tempMin: Double,
+    @Json(name = "temp_max") val tempMax: Double
+)
+
 data class WeatherDescription(val main: String, val description: String, val icon: String)
 
 data class Sys(
@@ -190,23 +222,31 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
 
     LaunchedEffect(Unit) {
         if (viewModel.searchLocation.isNotBlank()) {
-            viewModel.fetchWeather(viewModel.searchLocation)
+            viewModel.fetchWeather(viewModel.searchLocation) {}
         }
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
-        modifier = Modifier.fillMaxSize().background(brush = skyGradient).padding(top = 50.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brush = skyGradient)
+            .padding(top = 50.dp)
+            .verticalScroll(
+                rememberScrollState()
+            )
 
     ) {
         if (weather != null) {
-            Text("${weather.name}", style = MaterialTheme.typography.headlineLarge.copy(
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
+            Text(
+                "${weather.name}", style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
 
-            ))
+                )
+            )
 
             val imageModifier = Modifier
                 .size(180.dp)
@@ -214,24 +254,27 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
                 .background(Color.White)
                 .border(2.dp, Color.Black, CircleShape)
 
-            when (weather.weather[0].main.lowercase()){
-            "clouds" -> Image(
-                painter = painterResource(id = R.drawable.cloud),
-                contentDescription = "Clouds Icon",
-                contentScale = ContentScale.Crop
-            )
+            when (weather.weather[0].main.lowercase()) {
+                "clouds" -> Image(
+                    painter = painterResource(id = R.drawable.cloud),
+                    contentDescription = "Clouds Icon",
+                    contentScale = ContentScale.Crop
+                )
+
                 "clear" -> Image(
                     painter = painterResource(id = R.drawable.clear),
                     contentDescription = "Sunny Clear Icon",
                     contentScale = ContentScale.Crop
 
                 )
+
                 "rain" -> Image(
                     painter = painterResource(id = R.drawable.rain),
                     contentDescription = "Rain Icon",
                     contentScale = ContentScale.Crop
 
                 )
+
                 else -> Image(
                     painter = painterResource(id = R.drawable.unknown),
                     contentDescription = "Unknown image",
@@ -241,59 +284,78 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
 
             }
             Spacer(Modifier.height(16.dp))
-            Text("${weather.main.temp.toInt()}°C" , fontWeight = FontWeight.Bold, fontSize = 64.sp, textAlign = TextAlign.Center, color = Color.White)
-            Text("Min:${weather.main.tempMin.toInt()}°C - Max: ${weather.main.tempMax.toInt()}°C", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(
+                "${weather.main.temp.toInt()}°C",
+                fontWeight = FontWeight.Bold,
+                fontSize = 64.sp,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+            Text(
+                "Min:${weather.main.tempMin.toInt()}°C - Max: ${weather.main.tempMax.toInt()}°C",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
             Text("Condition: ${weather.weather[0].description}", color = Color.White)
             Spacer(Modifier.height(25.dp))
 
-            Column( modifier = Modifier.fillMaxWidth().padding(start = 110.dp), horizontalAlignment = Alignment.Start) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.feelslike),
-                    contentDescription = "Feelslike Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Feels Like: ${weather.main.feelsLike.toInt()}°C", fontSize = 16.sp, color = Color.White
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.humidity),
-                    contentDescription = "Humidity Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Humidity: ${(weather.main.humidity)}%",
-                    color = Color.White
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.sunrise),
-                    contentDescription = "Sunrise Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Sunrise: ${formatTime(weather.sys.sunrise, weather.timezone)}",
-                    color = Color.White
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.sunset),
-                    contentDescription = "Sunset Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Sunset: ${formatTime(weather.sys.sunset, weather.timezone)}",
-                    color = Color.White
-                )
-            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 110.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.feelslike),
+                        contentDescription = "Feelslike Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Feels Like: ${weather.main.feelsLike.toInt()}°C",
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.humidity),
+                        contentDescription = "Humidity Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Humidity: ${(weather.main.humidity)}%",
+                        color = Color.White
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.sunrise),
+                        contentDescription = "Sunrise Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Sunrise: ${formatTime(weather.sys.sunrise, weather.timezone)}",
+                        color = Color.White
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.sunset),
+                        contentDescription = "Sunset Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Sunset: ${formatTime(weather.sys.sunset, weather.timezone)}",
+                        color = Color.White
+                    )
+                }
+
             }
         } else {
             Text("Enter a city to get the weather.")
@@ -302,15 +364,26 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
         Button(onClick = onRestart) {
             Text("Return home")
         }
+
+
     }
 }
-
 
 @SuppressLint("ViewModelConstructorInComposable")
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun WeatherPreview() {
+fun HomePreview() {
     SunnyUpNorthTheme {
-        WeatherScreen(viewModel = FakeWeatherViewModel(), onRestart = {})
+        HomeScreen(viewModel = FakeHomeScreenViewModel(), onStartWeather = {})
     }
 }
+
+
+//@SuppressLint("ViewModelConstructorInComposable")
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun WeatherPreview() {
+//    SunnyUpNorthTheme {
+//        WeatherScreen(viewModel = FakeWeatherViewModel(), onRestart = {})
+//    }
+//}

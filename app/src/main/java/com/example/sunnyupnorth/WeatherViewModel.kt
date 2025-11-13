@@ -27,7 +27,6 @@ open class WeatherViewModel : ViewModel() {
         .create(WeatherApi::class.java)
 
     var searchLocation by mutableStateOf("")
-        private set
 
     fun onSearchChange(newSearchLocation: String) {
         searchLocation = newSearchLocation
@@ -35,15 +34,25 @@ open class WeatherViewModel : ViewModel() {
 
     var weather by mutableStateOf<WeatherResponse?>(null)
 
-    fun fetchWeather(city: String) {
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    public var savedLocations = MutableList(10) { "" }
+
+
+    fun fetchWeather(city: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
                     api.getWeather(city, "24e6ac99e599996103979747b1734d33")
                 }
                 weather = response
+                errorMessage = null
+                onResult(true)
             } catch (e: Exception) {
                 e.printStackTrace()
+                errorMessage = "Location not found. Please try again."
+                onResult(false)
                 weather = null
             }
         }
