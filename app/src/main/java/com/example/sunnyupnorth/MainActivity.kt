@@ -104,9 +104,10 @@ val lightSkyBlue = Color(0xFF81D4FA) // A light, clear sky blue
 val deepSkyBlue = Color(0xFF0288D1)  // A deeper, vibrant blue
 
 
-fun formatTime(timestamp: Long): String {
-    val date = Date(timestamp * 1000)
+fun formatTime(timestamp: Long, timezoneOffset: Long):String {
+    val date = Date((timestamp + timezoneOffset) * 1000)
     val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
+    sdf.timeZone = TimeZone.getTimeZone("UTC")
     return sdf.format(date)
 }
 
@@ -166,7 +167,8 @@ data class WeatherResponse(
     val name: String,
     val main: MainInfo,
     val weather: List<WeatherDescription>,
-    val sys: Sys
+    val sys: Sys,
+    val timezone: Long
 )
 
 data class MainInfo(val temp: Double, val humidity: Int, @Json(name = "feels_like") val feelsLike: Double,
@@ -276,7 +278,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Sunrise: ${formatTime(weather.sys.sunrise)}",
+                    text = "Sunrise: ${formatTime(weather.sys.sunrise, weather.timezone)}",
                     color = Color.White
                 )
             }
@@ -288,7 +290,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Sunset: ${formatTime(weather.sys.sunset)}",
+                    text = "Sunset: ${formatTime(weather.sys.sunset, weather.timezone)}",
                     color = Color.White
                 )
             }

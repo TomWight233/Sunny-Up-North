@@ -19,9 +19,11 @@ class FakeWeatherViewModel : WeatherViewModel() {
                 )
             ),
             sys = Sys(
-                sunrise = 1731484800, // Example timestamp (UNIX, seconds)
-                sunset = 1731520800   // Example timestamp (UNIX, seconds)
-            )
+                sunrise = 1731484800,
+                sunset = 1731520800
+            ),
+            timezone = 0L
+
         )
     }
 }
