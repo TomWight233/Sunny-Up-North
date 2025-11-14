@@ -39,6 +39,9 @@ open class WeatherViewModel : ViewModel() {
     var saveMessage by mutableStateOf<String?>(null)
         private set
 
+    var resetMessage by mutableStateOf<String?>(null)
+        private set
+
     public var savedLocations = MutableList(10) { "" }
 
     var counter = 0
@@ -62,6 +65,11 @@ open class WeatherViewModel : ViewModel() {
     fun clearLocations(){
         savedLocations = MutableList(10) { "" }
         counter = 0
+        resetMessage = "Clear Successful"
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(4000)
+            resetMessage = null
+        }
     }
 
 

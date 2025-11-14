@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,12 +27,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -173,18 +176,56 @@ fun HomeScreen(
         Spacer(Modifier.height(24.dp))
         viewModel.savedLocations.forEach {
             if (it != "") {
-                Button(onClick = { onStartWeather(it) }, modifier= Modifier.fillMaxWidth(0.80f), shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F5185), contentColor = Color.White)) {
-                    Text(it,
+                Button(
+                    onClick = { onStartWeather(it) },
+                    modifier = Modifier.fillMaxWidth(0.80f),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3F5185),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        it,
                         fontSize = 20.sp,
-                        color = Color.White)
+                        color = Color.White
+                    )
 
                 }
             }
         }
-        Spacer(Modifier.height(24.dp))
-         Button(onClick = { viewModel.clearLocations() })
-        {
-            Text("Reset Locations")
+        if (viewModel.savedLocations[0] != "") {
+            Spacer(Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.clearLocations() },
+                modifier = Modifier.size(60.dp),
+                contentPadding = PaddingValues(0.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE0E1EC),
+                    contentColor = Color.White,
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = "Refresh",
+                    modifier = Modifier.fillMaxSize(0.80f),
+                    tint = Color.Black
+                )
+
+
+            }
+
+        }
+        viewModel.resetMessage?.let { msg ->
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = msg,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         viewModel.errorMessage?.let { error ->
@@ -237,7 +278,7 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
     val skyGradient = Brush.verticalGradient(
         colors = listOf(lightSkyBlue, deepSkyBlue)
     )
-    var isSaved by remember {mutableStateOf(viewModel.searchLocation in viewModel.savedLocations)}
+    var isSaved by remember { mutableStateOf(viewModel.searchLocation in viewModel.savedLocations) }
 
     val heartColour by animateColorAsState(
         targetValue = if (isSaved) Color.Red else Color.White
@@ -266,13 +307,13 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
                 viewModel.saveLocation(viewModel.searchLocation)
                 isSaved = true
             }) {
-                    Icon(
-                        imageVector = Icons.Filled.Favorite,
-                        contentDescription = "Save",
-                        tint = heartColour,
-                        modifier = Modifier.size(60.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = "Save",
+                    tint = heartColour,
+                    modifier = Modifier.size(60.dp)
+                )
+            }
 
             viewModel.saveMessage?.let { msg ->
                 Spacer(Modifier.height(8.dp))
@@ -285,135 +326,136 @@ fun WeatherScreen(viewModel: WeatherViewModel, onRestart: () -> Unit) {
             }
 
 
-        Text(
-            "${weather.name}", style = MaterialTheme.typography.headlineLarge.copy(
+            Text(
+                "${weather.name}", style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+
+                )
+            )
+
+            val imageModifier = Modifier
+                .size(180.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+                .border(2.dp, Color.Black, CircleShape)
+
+            when (weather.weather[0].main.lowercase()) {
+                "clouds" -> Image(
+                    painter = painterResource(id = R.drawable.cloud),
+                    contentDescription = "Clouds Icon",
+                    contentScale = ContentScale.Crop
+                )
+
+                "clear" -> Image(
+                    painter = painterResource(id = R.drawable.clear),
+                    contentDescription = "Sunny Clear Icon",
+                    contentScale = ContentScale.Crop
+
+                )
+
+                "rain" -> Image(
+                    painter = painterResource(id = R.drawable.rain),
+                    contentDescription = "Rain Icon",
+                    contentScale = ContentScale.Crop
+
+                )
+
+                else -> Image(
+                    painter = painterResource(id = R.drawable.unknown),
+                    contentDescription = "Unknown image",
+                    contentScale = ContentScale.Crop
+
+                )
+
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "${weather.main.temp.toInt()}°C",
+                fontWeight = FontWeight.Bold,
                 fontSize = 64.sp,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+            Text(
+                "Min:${weather.main.tempMin.toInt()}°C - Max: ${weather.main.tempMax.toInt()}°C",
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
-
             )
-        )
+            Text("Condition: ${weather.weather[0].description}", color = Color.White)
+            Spacer(Modifier.height(25.dp))
 
-        val imageModifier = Modifier
-            .size(180.dp)
-            .clip(CircleShape)
-            .background(Color.White)
-            .border(2.dp, Color.Black, CircleShape)
-
-        when (weather.weather[0].main.lowercase()) {
-            "clouds" -> Image(
-                painter = painterResource(id = R.drawable.cloud),
-                contentDescription = "Clouds Icon",
-                contentScale = ContentScale.Crop
-            )
-
-            "clear" -> Image(
-                painter = painterResource(id = R.drawable.clear),
-                contentDescription = "Sunny Clear Icon",
-                contentScale = ContentScale.Crop
-
-            )
-
-            "rain" -> Image(
-                painter = painterResource(id = R.drawable.rain),
-                contentDescription = "Rain Icon",
-                contentScale = ContentScale.Crop
-
-            )
-
-            else -> Image(
-                painter = painterResource(id = R.drawable.unknown),
-                contentDescription = "Unknown image",
-                contentScale = ContentScale.Crop
-
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 110.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.feelslike),
+                        contentDescription = "Feelslike Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Feels Like: ${weather.main.feelsLike.toInt()}°C",
+                        fontSize = 16.sp,
+                        color = Color.White
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.humidity),
+                        contentDescription = "Humidity Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Humidity: ${(weather.main.humidity)}%",
+                        color = Color.White
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.sunrise),
+                        contentDescription = "Sunrise Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Sunrise: ${formatTime(weather.sys.sunrise, weather.timezone)}",
+                        color = Color.White
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.sunset),
+                        contentDescription = "Sunset Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Sunset: ${formatTime(weather.sys.sunset, weather.timezone)}",
+                        color = Color.White
+                    )
+                }
+            println(viewModel.savedLocations)
+            }
+        } else {
+            Text("Enter a city to get the weather.")
+        }
+        Spacer(Modifier.height(50.dp))
+        Button(onClick = onRestart) {
+            println(viewModel.savedLocations)
+            Text("Return home")
 
         }
-        Spacer(Modifier.height(16.dp))
-        Text(
-            "${weather.main.temp.toInt()}°C",
-            fontWeight = FontWeight.Bold,
-            fontSize = 64.sp,
-            textAlign = TextAlign.Center,
-            color = Color.White
-        )
-        Text(
-            "Min:${weather.main.tempMin.toInt()}°C - Max: ${weather.main.tempMax.toInt()}°C",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
-        Text("Condition: ${weather.weather[0].description}", color = Color.White)
-        Spacer(Modifier.height(25.dp))
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 110.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.feelslike),
-                    contentDescription = "Feelslike Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Feels Like: ${weather.main.feelsLike.toInt()}°C",
-                    fontSize = 16.sp,
-                    color = Color.White
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.humidity),
-                    contentDescription = "Humidity Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Humidity: ${(weather.main.humidity)}%",
-                    color = Color.White
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.sunrise),
-                    contentDescription = "Sunrise Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Sunrise: ${formatTime(weather.sys.sunrise, weather.timezone)}",
-                    color = Color.White
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.sunset),
-                    contentDescription = "Sunset Icon",
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = "Sunset: ${formatTime(weather.sys.sunset, weather.timezone)}",
-                    color = Color.White
-                )
-            }
-
-        }
-    } else {
-        Text("Enter a city to get the weather.")
-    }
-    Spacer(Modifier.height(50.dp))
-    Button(onClick = onRestart) { println(viewModel.savedLocations)
-        Text("Return home")
 
     }
-
-
-}
 }
 
 @SuppressLint("ViewModelConstructorInComposable")
