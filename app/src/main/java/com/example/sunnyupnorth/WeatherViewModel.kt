@@ -59,6 +59,11 @@ open class WeatherViewModel : ViewModel() {
         }
     }
 
+    fun clearLocations(){
+        savedLocations = MutableList(10) { "" }
+        counter = 0
+    }
+
 
     fun fetchWeather(city: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {

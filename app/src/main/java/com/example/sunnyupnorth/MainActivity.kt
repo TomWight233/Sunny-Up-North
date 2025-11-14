@@ -181,6 +181,11 @@ fun HomeScreen(
                 }
             }
         }
+        Spacer(Modifier.height(24.dp))
+         Button(onClick = { viewModel.clearLocations() })
+        {
+            Text("Reset Locations")
+        }
 
         viewModel.errorMessage?.let { error ->
             Spacer(Modifier.height(16.dp))
