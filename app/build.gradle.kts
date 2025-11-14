@@ -1,13 +1,24 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(localPropsFile.inputStream())
+}
+
+val apiKey: String = localProps.getProperty("MY_API_KEY") ?: ""
+
+
 android {
+    buildToolsVersion = "34.0.0"
     namespace = "com.example.sunnyupnorth"
     compileSdk = 36
-
 
     defaultConfig {
         applicationId = "com.example.sunnyupnorth"
@@ -17,6 +28,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Kotlin DSL syntax for buildConfigField
+        buildConfigField("String", "MY_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -28,6 +42,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -36,6 +51,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }

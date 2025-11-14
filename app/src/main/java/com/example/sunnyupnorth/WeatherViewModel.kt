@@ -72,12 +72,13 @@ open class WeatherViewModel : ViewModel() {
         }
     }
 
+    val apiKey = BuildConfig.MY_API_KEY
 
     fun fetchWeather(city: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
-                    api.getWeather(city, "24e6ac99e599996103979747b1734d33")
+                    api.getWeather(city, apiKey)
                 }
                 weather = response
                 errorMessage = null
